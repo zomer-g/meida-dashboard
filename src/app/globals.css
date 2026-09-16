@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens taken from meida.org.il: deep navy (#0b2149) for the header strip,
+ * headings and footer, a bright blue (#2274da) for calls to action, pale sky blue
+ * panels (#c6e3f4), the Assistant typeface, a dotted page texture and softly
+ * rounded cards.
+ */
+@theme {
+  --font-sans: var(--font-assistant), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+
+  /* Calls to action. White on #2274da is 4.63:1 (AA). */
+  --color-brand: #2274da;
+  --color-brand-hover: #1a5fb4;
+  --color-brand-dark: #0b2149;
+  /* Panels and chips. #144683 carries text on white and on the sky panel (≥ 7:1). */
+  --color-accent: #144683;
+  --color-accent-dark: #0b2149;
+  --color-accent-light: #c6e3f4;
+  --color-hot: #fec84b;
+
+  --color-surface: #f5f8fb;
+  --color-panel: #e9eef4;
+  --color-line: #dbe3ec;
+  /* Field borders need 3:1 against white and the cards (WCAG 1.4.11). */
+  --color-field: #64748b;
+
+  --color-ink: #0b2149;
+  --color-muted: #3b4763;
+  --color-success: #027a48;
+  --color-success-soft: #ecfdf3;
+  --color-danger: #b42318;
+  --color-danger-soft: #ffcdca;
+  --color-warning: #93370d;
+  --color-warning-soft: #fef0c7;
+
+  /* Categorical series in fixed order — the dataviz reference palette, validated
+     (validate_palette.js, light surface): slot 1 is almost exactly the site's blue. */
+  --color-series-1: #2a78d6;
+  --color-series-2: #eb6834;
+  --color-series-3: #1baf7a;
+  --color-series-4: #eda100;
+  --color-series-5: #e87ba4;
+  --color-series-6: #008300;
+  --color-series-7: #4a3aa7;
+  --color-series-8: #e34948;
+  /* "Other" / the remainder: a neutral that never reads as a series. */
+  --color-series-other: #9aa5b4;
+
+  /* Ordinal ramp (fast → slow, good → bad): one blue hue, light → dark. */
+  --color-ord-1: #9ec5f4;
+  --color-ord-2: #5598e7;
+  --color-ord-3: #2a78d6;
+  --color-ord-4: #1c5cab;
+  --color-ord-5: #0d366b;
+
+  --radius-card: 16px;
+  --radius-modal: 24px;
+
+  --shadow-field: 0 1px 3px #0b214926;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+}
+
+/* The site's light dotted texture, for the sign-in screen. */
+.bg-dots {
+  background-color: #ffffff;
+  background-image: radial-gradient(#c6e3f4 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+}
+
+/* In the base layer so `focus-visible:outline-*` utilities can recolour it on dark or teal backgrounds. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/*
+ * Tables on phones (see Table in components/ui.tsx): every row is a card. The
+ * first cell is the card's title; each other cell shows its column heading
+ * (data-label) beside the value. Column headers stay for screen readers.
+ */
+@media (max-width: 639px) {
+  .table-cards {
+    overflow-x: visible;
+  }
+  .table-cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .table-cards tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .table-cards tbody > tr {
+    display: block;
+    border: 1px solid var(--color-line) !important;
+    border-radius: 16px;
+    background: #ffffff;
+    padding: 0.25rem 0.875rem;
+  }
+  /* A value cell: the heading sits at the start, the value (however many lines) in the rest. */
+  .table-cards tbody > tr > td,
+  .table-cards tbody > tr > th {
+    display: block;
+    position: relative;
+    min-height: 1.75rem;
+    padding: 0.4rem 0 !important;
+    padding-inline-start: calc(36% + 0.75rem) !important;
+    white-space: normal !important;
+    text-align: start !important;
+    overflow-wrap: anywhere;
+  }
+  .table-cards tbody > tr > td:not(:first-child) + td {
+    border-top: 1px dashed var(--color-line);
+  }
+  .table-cards tbody > tr > :is(td, th)::before {
+    content: attr(data-label);
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.5rem;
+    width: 36%;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+    color: var(--color-muted);
+  }
+  /* The first cell is the title: full width, no heading. So is an actions cell (empty heading). */
+  .table-cards tbody > tr > :is(td, th):first-child,
+  .table-cards tbody > tr > :is(td, th)[data-label=""] {
+    padding-inline-start: 0 !important;
+  }
+  .table-cards tbody > tr > :is(td, th):first-child::before,
+  .table-cards tbody > tr > :is(td, th)[data-label=""]::before {
+    content: none;
+  }
+  .table-cards tbody > tr > :is(td, th):first-child {
+    font-size: 0.9375rem;
+    padding-top: 0.6rem !important;
+    padding-bottom: 0.6rem !important;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .table-cards tbody > tr > [data-label=""] > * {
+    justify-content: flex-start;
+  }
+  /* A cell whose content is empty says nothing on a card. */
+  .table-cards tbody > tr > td:empty {
+    display: none;
+  }
+}
