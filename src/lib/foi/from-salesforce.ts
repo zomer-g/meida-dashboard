@@ -61,6 +61,11 @@ export async function saveCaseLabels(describe: SfDescribe): Promise<void> {
   const mapping = mapCaseFields(describe);
   const missing = mapping.filter((m) => !m.apiName).map((m) => m.key);
   console.log(`[sync] Case field mapping: ${mapping.length - missing.length}/${mapping.length} dashboard fields found${missing.length ? `; not found: ${missing.join(", ")}` : ""}`);
+  if (missing.length) {
+    // Enough to fix a mapping from the log alone: every lookup, and every field whose label looks related.
+    const lookups = describe.fields.filter((f) => f.type === "reference").map((f) => `${f.name}="${f.label}"→${f.referenceTo.join("/")}`);
+    console.log(`[sync] Case lookup fields: ${lookups.join("; ")}`);
+  }
   const db = getDb();
   await db.transaction(async (tx) => {
     await tx.delete(sfFieldLabels).where(eq(sfFieldLabels.sobject, "Case"));
@@ -107,6 +112,15 @@ export async function requestsFromSalesforce(since?: Date): Promise<{ upserted: 
       for (const [api, value] of Object.entries(record)) {
         const label = labelOf.get(api);
         if (label) row[label] = asText(value);
+      }
+      // A lookup reads as its related record's name, as in a report: Account.Name under the AccountId label.
+      for (const [rel, value] of Object.entries(record)) {
+        if (!value || typeof value !== "object" || !("Name" in value)) continue;
+        const api = rel.endsWith("__r") ? `${rel.slice(0, -3)}__c` : `${rel}Id`;
+        const label = labelOf.get(api);
+        if (label) row[label] = asText((value as { Name: unknown }).Name);
+        // The relationship name itself, for labels that name the related object ("Account Name").
+        row[`${rel}.Name`] = asText((value as { Name: unknown }).Name);
       }
       row["Case Number"] = asText(record.CaseNumber);
       row["__sf_id"] = id;

@@ -46,6 +46,15 @@ function selectFields(describe: SfDescribe, def: SyncObjectDef): string[] {
   let fields = def.include ? def.include.filter((f) => available.includes(f)) : available;
   if (def.exclude) fields = fields.filter((f) => !def.exclude!.includes(f));
   for (const required of ["Id", def.cursorField]) if (!fields.includes(required)) fields.unshift(required);
+  if (def.lookupNames) {
+    for (const f of describe.fields) {
+      if (f.type !== "reference" || !f.relationshipName || !fields.includes(f.name)) continue;
+      // Polymorphic lookups (Owner → User/Group) qualify only when every target has a Name.
+      if (f.referenceTo.length && f.referenceTo.every((o) => def.lookupNames!.includes(o) || o.endsWith("__c"))) {
+        fields.push(`${f.relationshipName}.Name`);
+      }
+    }
+  }
   return [...new Set(fields)];
 }
 
@@ -138,7 +147,11 @@ async function syncObject(def: SyncObjectDef, mode: SyncMode, trigger: string): 
     }
 
     const [state] = await db.select().from(syncState).where(eq(syncState.object, def.name));
-    const since = mode === "full" || !state?.cursor ? null : new Date(state.cursor.getTime() - CURSOR_OVERLAP_MS);
+    const versionKey = def.fieldsVersion ? `${def.name} (${def.fieldsVersion})` : null;
+    const [version] = versionKey ? await db.select().from(syncState).where(eq(syncState.object, versionKey)) : [];
+    const reload = Boolean(versionKey && !version?.lastSuccessAt);
+    if (reload) console.log(`[sync] ${def.name}: selected fields changed (${def.fieldsVersion}); full reload`);
+    const since = mode === "full" || reload || !state?.cursor ? null : new Date(state.cursor.getTime() - CURSOR_OVERLAP_MS);
     const conditions = [def.where, since ? `${def.cursorField} > ${soqlDateTime(since)}` : null].filter(Boolean);
     const soql =
       `SELECT ${selectFields(describe, def).join(", ")} FROM ${def.name}` +
@@ -173,6 +186,7 @@ async function syncObject(def: SyncObjectDef, mode: SyncMode, trigger: string): 
 
     const [{ n }] = (await db.select({ n: sql<number>`count(*)::int` }).from(def.table)) as [{ n: number }];
     await saveState(def.name, { cursor, lastSuccessAt: new Date(), lastError: null, rowCount: n });
+    if (versionKey) await saveState(versionKey, { lastSuccessAt: new Date(), rowCount: n });
     return finish({ upserted, deleted });
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);

@@ -24,6 +24,13 @@ export interface SyncObjectDef {
   reconcile: boolean;
   /** Skip quietly when the integration user cannot see the object. */
   optional?: boolean;
+  /** Also select `<Relationship>.Name` for lookups to these objects (any custom object too), so names travel with ids. */
+  lookupNames?: string[];
+  /**
+   * Bump when the selected fields change: a mirror synced under an older marker
+   * gets one full reload, so existing rows pick up the new fields.
+   */
+  fieldsVersion?: string;
   /** Runs with each fresh describe (the Case field labels are kept for the request mapping). */
   onDescribe?: (describe: SfDescribe) => Promise<void>;
   toRow(record: SfRecord): Record<string, unknown>;
@@ -89,6 +96,9 @@ export const SYNC_OBJECTS: SyncObjectDef[] = [
     cursorField: "SystemModstamp",
     hasIsDeleted: true,
     reconcile: true,
+    // "שם הארגון אליו מופנת הבקשה", "המטפל בבקשה" and the owner are lookups: the dashboard needs their names.
+    lookupNames: ["Account", "Contact", "User", "Group"],
+    fieldsVersion: "lookup-names-1",
     onDescribe: saveCaseLabels,
     toRow: (r) => ({
       id: str(r, "Id"),
