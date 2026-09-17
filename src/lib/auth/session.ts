@@ -6,7 +6,7 @@ import { accessRequests, auditLog, invites, userTypes, users } from "@/lib/db/sc
 import { PAGE_KEYS } from "@/lib/pages";
 import { readPreview } from "./preview";
 import { hasRole, type Role } from "./roles";
-import { verifiedIdentity, type Identity } from "./xhost";
+import { DEV_AUTH_SUBJECT, devAuthEmail, verifiedIdentity, type Identity } from "./xhost";
 
 /**
  * Authentication is not authorisation: anyone can hold a Google account, so a
@@ -141,8 +141,9 @@ async function resolveUser(identity: Identity): Promise<SessionUser | null> {
 
   if (!row || !row.active) return null;
 
-  // An email is bound to the Google account that first used it.
-  if (row.sub && row.sub !== identity.sub && identity.sub !== "dev-local") {
+  // An email is bound to the Google account that first used it. The local dev identity is
+  // exempt, and only where dev impersonation is actually switched on (never in production).
+  if (row.sub && row.sub !== identity.sub && !(devAuthEmail() && identity.sub === DEV_AUTH_SUBJECT)) {
     console.warn(`[auth] ${email} presented a different Google subject; refusing`);
     await auditSubjectMismatch(email, identity.sub);
     return null;

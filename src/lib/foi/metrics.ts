@@ -304,7 +304,7 @@ export interface MediaKpis {
 export function mediaKpis(f: Filters): Promise<MediaKpis> {
   return cached(key("mediaKpis", f), async () => {
     const [row] = await rows<Record<string, unknown>>(sql`${REQUEST_VIEW} ${MEDIA_VIEW}
-      , s as (select p.*, r.submitted_on, r.full_response_on ${MEDIA_FROM} ${whereClause(f, published)}),
+      , s as (select p.*, r.submitted_on, r.full_response_on ${MEDIA_FROM} ${whereClause(f, published, [], { media: true })}),
       firsts as (
         select case_number, min(published_on) as first_on, min(submitted_on) as submitted_on, min(full_response_on) as full_response_on
         from s where published_on is not null group by 1
@@ -331,7 +331,7 @@ export function mediaKpis(f: Filters): Promise<MediaKpis> {
 export function mediaCounts(f: Filters, dim: MediaDim, limit = 50): Promise<CountRow[]> {
   return cached(key("mediaCounts", f, dim, limit), async () => {
     const data = await rows<CountRow>(sql`${REQUEST_VIEW} ${MEDIA_VIEW}
-      select ${MEDIA_DIMS[dim]} as label, count(*)::int as n ${MEDIA_FROM} ${whereClause(f, published)}
+      select ${MEDIA_DIMS[dim]} as label, count(*)::int as n ${MEDIA_FROM} ${whereClause(f, published, [], { media: true })}
       group by 1 order by 2 desc limit ${limit}`);
     return data.map((d) => ({ label: String(d.label), n: Number(d.n) }));
   });
@@ -340,7 +340,7 @@ export function mediaCounts(f: Filters, dim: MediaDim, limit = 50): Promise<Coun
 export function mediaOverTime(f: Filters, dim: MediaDim, top = 6): Promise<TimeRow[]> {
   return cached(key("mediaOverTime", f, dim, top), async () => {
     const data = await rows<TimeRow>(sql`${REQUEST_VIEW} ${MEDIA_VIEW}
-      , s as (select p.published_on, ${MEDIA_DIMS[dim]} as label ${MEDIA_FROM} ${whereClause(f, published, [sql`p.published_on is not null`])}),
+      , s as (select p.published_on, ${MEDIA_DIMS[dim]} as label ${MEDIA_FROM} ${whereClause(f, published, [sql`p.published_on is not null`], { media: true })}),
       t as (select label from s group by 1 order by count(*) desc limit ${top})
       select to_char(published_on, 'YYYY-MM-DD') as day,
         case when label in (select label from t) then label else 'אחר' end as label,
@@ -367,7 +367,7 @@ export function publicationList(f: Filters, limit = 50, offset = 0): Promise<{ r
     const data = await rows<Record<string, unknown>>(sql`${REQUEST_VIEW} ${MEDIA_VIEW}
       select p.case_number, r.name, p.published_on::text as published_on, p.url, p.outlet, p.category, r.organization, r.owner, r.entity_kind,
         count(*) over ()::int as total_rows
-      ${MEDIA_FROM} ${whereClause(f, published)}
+      ${MEDIA_FROM} ${whereClause(f, published, [], { media: true })}
       order by p.published_on desc nulls last, p.case_number desc, p.position
       limit ${limit} offset ${offset}`);
     return {

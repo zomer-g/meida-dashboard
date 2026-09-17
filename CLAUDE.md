@@ -8,10 +8,10 @@ Replaces two Looker Studio reports (the media report and the 18-page detailed re
 Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4 · Drizzle ORM + pg · jose. Hosted on xhostd, app
 `meida-dashboard` (template `app`: `install.sh` builds, `launch.sh` migrates, seeds an empty DB, starts the sync worker
 and `next start`). Database: xhostd's own Postgres (`DATABASE_URL`, injected). Exact-pinned dependencies.
-Started from the SKEELZ Admin codebase (`C:\Users\zomer\CLAUDE CODE\Skeelz`) — auth, sync and admin patterns match it.
+Started from a sibling admin codebase (SKEELZ Admin) — auth, sync and admin patterns match it.
 
 ## Commands
-- `npm run db:local` (PGlite on 5434) · `npm run db:migrate:local` · `npm run dev` (with `.env.local`: `DATABASE_URL`, `DEV_AUTH_EMAIL`, `ADMIN_EMAILS`)
+- `npm run db:local` (PGlite on 5434) · `npm run db:migrate:local` · `npm run dev` (with `.env.local`: `DATABASE_URL`, `ALLOW_DEV_AUTH=true`, `DEV_AUTH_EMAIL`, `ADMIN_EMAILS`)
 - `npm run import:csv -- file.csv [more.csv]` — same importer as `/admin/data`
 - `npm run typecheck` · `npm run build`
 - `npm run db:generate` after editing `src/lib/db/schema.ts` (commit `drizzle/`)
@@ -68,7 +68,19 @@ Same rules as SKEELZ Admin: text ≥ 4.5:1, one h1 per page, card titles are hea
 `role="status"`, repeated link text gets sr-only context. CSP in `next.config.ts` — the browser loads nothing cross-origin.
 No server-side redirects to absolute URLs (xhostd proxy); anonymous page requests render `SignInScreen` with 200.
 
-## Data caveats
-`seed/` holds the two static exports the dashboard started with (full request export up to mid-2022, media report to
-2026). They are imported only into an empty database. Once Salesforce is connected they are superseded; remove `seed/`
-if the repository is ever made public (it contains names of staff, lawyers and journalists).
+## Public repository — what must never be committed
+The repository is public (github.com/zomer-g/meida-dashboard) and the xhostd remote mirrors it. Request data is
+personal data: names of staff, lawyers, journalists and free-text descriptions. `seed/` (the static CSV exports the
+dashboard started with) is gitignored and was purged from history; keep it that way, and never commit an export,
+a `.sf-describe/` report, `docs/sf-schema-report.md` or a `.env*` file. Real addresses live in the environment:
+`CONTACT_EMAIL` (shown on the public documents) and `ADMIN_EMAILS`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

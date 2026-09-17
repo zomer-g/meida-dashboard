@@ -34,7 +34,10 @@ export async function DashboardFrame({
   children: ReactNode;
 }) {
   const page = findPage(pageKey)!;
-  const [options, freshness] = await Promise.all([filterOptions(), dataFreshness()]);
+  // Only the filters this page shows: every prop crossing to the client is embedded in the
+  // HTML, and the full vocabulary holds staff names, project names and every authority.
+  const [allOptions, freshness] = await Promise.all([keys.length ? filterOptions() : Promise.resolve({}), dataFreshness()]);
+  const options = Object.fromEntries(keys.map((k) => [k, allOptions[k as keyof typeof allOptions] ?? []]));
   const allowed = auth.user?.pages ?? [];
   const tabs = PAGES.filter((p) => p.group === page.group && (allowed.includes(p.key) || p.key === pageKey));
   const isAdmin = auth.user?.role === "admin";

@@ -24,7 +24,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const auth = await dashboardAuth("requests", viewPath("/requests", f));
   if (!auth.ok) return auth.render;
 
-  const page = Math.max(1, Number(search.page) || 1);
+  const page = Math.min(Math.max(1, Math.floor(Number(search.page)) || 1), 10_000);
   const list = await requestList(f, { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
 
   return (

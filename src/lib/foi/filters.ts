@@ -68,8 +68,12 @@ export function viewPath(base: string, f: Filters): string {
 /**
  * SQL conditions over the request view `r` (see metrics.ts). `dateColumn` is the
  * column the range applies to: submitted_on for requests, published_on for media.
+ *
+ * `media` says whether the query joins the publications view `p`. Without it the
+ * outlet and category filters are ignored rather than referencing a missing table —
+ * every filter travels in the URL, including to pages that show no publications.
  */
-export function whereClause(f: Filters, dateColumn: SQL, extra: SQL[] = []): SQL {
+export function whereClause(f: Filters, dateColumn: SQL, extra: SQL[] = [], { media = false } = {}): SQL {
   const parts: SQL[] = [...extra];
   if (f.from) parts.push(sql`${dateColumn} >= ${f.from}`);
   if (f.to) parts.push(sql`${dateColumn} <= ${f.to}`);
@@ -83,8 +87,8 @@ export function whereClause(f: Filters, dateColumn: SQL, extra: SQL[] = []): SQL
   if (v.entity) parts.push(sql`r.entity_kind = ${v.entity}`);
   if (v.petition === "yes") parts.push(sql`(r.petition_filed_on is not null or r.court_case_number is not null)`);
   if (v.petition === "no") parts.push(sql`(r.petition_filed_on is null and r.court_case_number is null)`);
-  if (v.outlet) parts.push(sql`p.outlet = ${v.outlet}`);
-  if (v.category) parts.push(sql`p.category = ${v.category}`);
+  if (media && v.outlet) parts.push(sql`p.outlet = ${v.outlet}`);
+  if (media && v.category) parts.push(sql`p.category = ${v.category}`);
   if (f.q) {
     const like = `%${f.q.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
     parts.push(sql`(r.name ilike ${like} or r.description ilike ${like} or r.case_number = ${f.q} or r.organization ilike ${like})`);

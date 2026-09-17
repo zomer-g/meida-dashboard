@@ -19,3 +19,6 @@ docs/sf-schema-report.md
 
 # Local preview config
 .claude/
+
+# Salesforce/CSV exports: personal data, never in the public repo (see CLAUDE.md)
+seed/

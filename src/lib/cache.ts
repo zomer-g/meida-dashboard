@@ -13,6 +13,11 @@ const MAX_ENTRIES = 100;
 
 const entries = new Map<string, { at: number; value: Promise<unknown> }>();
 
+/** Drops one memo, for a change that must take effect now (a page leaving public view). */
+export function clearCached(key: string): void {
+  entries.delete(key);
+}
+
 export function cached<T>(key: string, compute: () => Promise<T>, ttlMs = TTL_MS): Promise<T> {
   const now = Date.now();
   const hit = entries.get(key);

@@ -9,20 +9,24 @@ import { importCsvText } from "@/lib/foi/import";
 
 export type ImportState = { ok: boolean; lines: string[] } | null;
 
-const MAX_BYTES = 20 * 1024 * 1024;
+// The import holds the file, the parsed rows and the normalized rows at once, in a
+// web process with a 256MB heap — a report export is a few MB, so this is generous.
+const MAX_BYTES = 6 * 1024 * 1024;
+const MAX_FILES = 4;
 
 /** Editors upload Salesforce report exports; each file merges into the requests by case number. */
 export async function uploadCsv(_prev: ImportState, form: FormData): Promise<ImportState> {
   const user = await requireUser("editor");
   const files = form.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
   if (!files.length) return { ok: false, lines: ["יש לבחור לפחות קובץ CSV אחד"] };
+  if (files.length > MAX_FILES) return { ok: false, lines: [`אפשר להעלות עד ${MAX_FILES} קבצים בפעם אחת`] };
 
   const lines: string[] = [];
   let ok = true;
   for (const file of files) {
     if (file.size > MAX_BYTES) {
       ok = false;
-      lines.push(`${file.name}: הקובץ גדול מ-20MB`);
+      lines.push(`${file.name}: הקובץ גדול מ-${MAX_BYTES / 1024 / 1024}MB`);
       continue;
     }
     try {

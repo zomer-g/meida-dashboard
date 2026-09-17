@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   // CSV uploads at /admin/data go through a server action; Salesforce report exports run to a few MB.
-  experimental: { serverActions: { bodySizeLimit: "25mb" } },
+  experimental: { serverActions: { bodySizeLimit: "8mb" } },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

@@ -84,9 +84,8 @@ export async function changeUserType(form: FormData): Promise<void> {
   if (!UUID_RE.test(id)) throw new Error("invalid id");
   const userType = await parseUserType(form.get("userType"));
   if (userType === undefined) throw new Error("unknown user type");
-  const [target] = await getDb().select().from(users).where(eq(users.id, id)).limit(1);
-  if (!target) throw new Error("user not found");
-  await getDb().update(users).set({ userType }).where(eq(users.id, id));
+  const target = await loadChangeableUser(id, admin.id);
+  await getDb().update(users).set({ userType }).where(eq(users.id, target.id));
   await writeAudit(admin.email, "user.type_changed", target.email, { from: target.userType, to: userType });
   revalidatePath(PATH);
 }

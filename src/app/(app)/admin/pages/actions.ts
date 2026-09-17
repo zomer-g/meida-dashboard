@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { writeAudit } from "@/lib/audit";
+import { clearPagePublicCache } from "@/lib/auth/guard";
 import { requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { pageSettings } from "@/lib/db/schema";
@@ -19,6 +20,7 @@ export async function setPagePublic(form: FormData): Promise<void> {
     .insert(pageSettings)
     .values({ pageKey: page.key, isPublic, updatedBy: admin.email })
     .onConflictDoUpdate({ target: pageSettings.pageKey, set: { isPublic, updatedBy: admin.email, updatedAt: new Date() } });
+  clearPagePublicCache(page.key);
   await writeAudit(admin.email, isPublic ? "page.published" : "page.unpublished", page.key);
   revalidatePath("/admin/pages");
   revalidatePath(page.path);

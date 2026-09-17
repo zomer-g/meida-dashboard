@@ -22,7 +22,7 @@ export default async function MediaReportPage({ searchParams }: { searchParams: 
   const auth = await dashboardAuth("media", viewPath("/", f));
   if (!auth.ok) return auth.render;
 
-  const page = Math.max(1, Number(search.page) || 1);
+  const page = Math.min(Math.max(1, Math.floor(Number(search.page)) || 1), 10_000);
   const [kpis, byOutlet, byCategory, byOrg, monthlyOutlet, monthlyCategory, monthlyOrg, list] = await Promise.all([
     mediaKpis(f),
     mediaCounts(f, "outlet"),

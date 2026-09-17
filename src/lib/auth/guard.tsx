@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Forbidden } from "@/components/Forbidden";
 import { SignInScreen } from "@/components/SignInScreen";
 import { logPageView } from "@/lib/audit";
-import { cached } from "@/lib/cache";
+import { cached, clearCached } from "@/lib/cache";
 import { getDb } from "@/lib/db/client";
 import { pageSettings } from "@/lib/db/schema";
 import { findPage } from "@/lib/pages";
@@ -38,10 +38,17 @@ export async function pageAuth(minimum: Role, returnTo: string): Promise<PageAut
 
 export type DashboardAuth = { ok: true; user: SessionUser | null; isPublic: boolean } | { ok: false; render: ReactNode };
 
+const publicCacheKey = (pageKey: string) => `page-public:${pageKey}`;
+
+/** Called when an admin publishes or un-publishes a page, so the change is immediate. */
+export function clearPagePublicCache(pageKey: string): void {
+  clearCached(publicCacheKey(pageKey));
+}
+
 /** Whether an admin opened this page to the public. Cached briefly: it is read on every render. */
 export function isPagePublic(pageKey: string): Promise<boolean> {
   return cached(
-    `page-public:${pageKey}`,
+    publicCacheKey(pageKey),
     async () => {
       const [row] = await getDb().select().from(pageSettings).where(eq(pageSettings.pageKey, pageKey)).limit(1);
       return row?.isPublic ?? false;
@@ -66,7 +73,9 @@ export async function dashboardAuth(pageKey: string, returnTo: string): Promise<
   }
   if (await isPagePublic(pageKey)) {
     const user = session.status === "ok" ? session.user : null;
-    logPageView(user?.email ?? "anonymous", returnTo);
+    // Signed-in views are logged as always; an anonymous visitor could otherwise insert an
+    // unbounded number of attacker-shaped rows into the activity log, one per request.
+    if (user) logPageView(user.email, returnTo);
     return { ok: true, user, isPublic: true };
   }
   if (session.status === "anonymous") return { ok: false, render: <SignInScreen returnTo={returnTo} /> };

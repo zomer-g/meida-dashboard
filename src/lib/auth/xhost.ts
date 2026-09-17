@@ -42,11 +42,21 @@ function audiences(): string[] {
   return configured;
 }
 
+/**
+ * Local development has no xhostd sign-in, so `next dev` may impersonate an email.
+ * It takes two deliberate settings and can never be switched on in production, so a
+ * stray env var on the server cannot turn every request into an admin session.
+ */
+export function devAuthEmail(): string | null {
+  if (process.env.NODE_ENV === "production" || process.env.ALLOW_DEV_AUTH !== "true") return null;
+  return process.env.DEV_AUTH_EMAIL?.trim().toLowerCase() || null;
+}
+
+export const DEV_AUTH_SUBJECT = "dev-local";
+
 export async function verifiedIdentity(): Promise<Identity | null> {
-  // There is no xhostd edge on localhost — let `next dev` impersonate a user.
-  if (process.env.NODE_ENV === "development" && process.env.DEV_AUTH_EMAIL) {
-    return { sub: "dev-local", email: process.env.DEV_AUTH_EMAIL.toLowerCase(), name: "Dev User", picture: null };
-  }
+  const dev = devAuthEmail();
+  if (dev) return { sub: DEV_AUTH_SUBJECT, email: dev, name: "Dev User", picture: null };
 
   const token = (await cookies()).get(XHOST_COOKIE)?.value;
   if (!token) return null;

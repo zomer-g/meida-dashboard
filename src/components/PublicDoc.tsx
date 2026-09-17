@@ -2,13 +2,24 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { BrandLogo } from "./BrandLogo";
 
-/** Where people write about accessibility, privacy and the API. */
-export const CONTACT_EMAIL = "zomerg@gmail.com";
+/**
+ * Where people write about accessibility and privacy. Set CONTACT_EMAIL in the
+ * environment — it is a real person's address, so it does not live in the source.
+ * Without it the public documents say "מנהלי המערכת" instead of an address.
+ */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function contactEmail(): string | null {
+  const email = process.env.CONTACT_EMAIL?.trim();
+  return email && EMAIL_RE.test(email) ? email : null;
+}
 
 export function ContactLink() {
+  const email = contactEmail();
+  if (!email) return <span className="font-medium">מנהלי המערכת</span>;
   return (
-    <a href={`mailto:${CONTACT_EMAIL}`} dir="ltr" className="font-medium text-accent-dark underline underline-offset-4">
-      {CONTACT_EMAIL}
+    <a href={`mailto:${email}`} dir="ltr" className="font-medium text-accent-dark underline underline-offset-4">
+      {email}
     </a>
   );
 }

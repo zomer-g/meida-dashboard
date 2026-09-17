@@ -124,6 +124,12 @@ function parseInt0(value: string | undefined): number | null {
 
 const text = (value: string | undefined) => (value ? value : null);
 
+/** Anything rendered as a link must be http(s): a "javascript:" cell would otherwise run on click. */
+const httpUrl = (value: string | undefined) => {
+  const v = value?.trim();
+  return v && /^https?:\/\//i.test(v) ? v : null;
+};
+
 /** '["eu2020","קורונה"]' (reports) or 'eu2020;קורונה' (a Salesforce multi-picklist). */
 function parseList(value: string | undefined): string[] {
   const v = value?.trim();
@@ -200,11 +206,11 @@ export function normalizeRow(row: LabelRow): NormalizedRequest | null {
     "judge",
     "lawFirm",
     "refusalNotes",
-    "sfUrl",
     "sfId",
   ] as const) {
     set(key, text(pick(row, key)));
   }
+  set("sfUrl", httpUrl(pick(row, "sfUrl")));
   for (const key of ["submittedOn", "deadlineOn", "fullResponseOn", "extension30On", "extension60On", "thirdPartyOn", "petitionFiledOn"] as const) {
     set(key, parseDay(pick(row, key)));
   }

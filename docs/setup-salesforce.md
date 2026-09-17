@@ -66,9 +66,9 @@
 
 ## שלב 4 — כתובת My Domain
 
-**Setup → My Domain** → מעתיקים את **Current My Domain URL**, למשל `https://meida.my.salesforce.com`.
+**Setup → My Domain** → מעתיקים את **Current My Domain URL**, בצורה `https://<my-domain>.my.salesforce.com`.
 
-> Client Credentials עובד **רק** מול כתובת My Domain, לא מול `login.salesforce.com`. (בדוח שייצאתם הקישורים הם `eu11.salesforce.com` — זו כתובת השרת, לא ה-My Domain.)
+> Client Credentials עובד **רק** מול כתובת My Domain, לא מול `login.salesforce.com`. (בדוחות שמייצאים, הקישורים מצביעים על כתובת ה-pod של Salesforce — זו אינה ה-My Domain.)
 
 ## שלב 5 — (לא חובה) בדיקה עצמית בטרמינל
 

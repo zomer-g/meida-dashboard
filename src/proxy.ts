@@ -13,7 +13,7 @@ import { loginUrl, XHOST_COOKIE } from "@/lib/auth/urls";
 
  */
 export function proxy(req: NextRequest) {
-  if (process.env.NODE_ENV === "development" && process.env.DEV_AUTH_EMAIL) return NextResponse.next();
+  if (process.env.NODE_ENV !== "production" && process.env.ALLOW_DEV_AUTH === "true") return NextResponse.next();
   if (req.cookies.has(XHOST_COOKIE)) return NextResponse.next();
   return NextResponse.json({ error: "unauthorized", login_url: loginUrl("/") }, { status: 401 });
 }
