@@ -1,4 +1,5 @@
-import { eq, getTableColumns, inArray, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { and, eq, getTableColumns, inArray, like, ne, sql } from "drizzle-orm";
 import { getDb, getPool } from "@/lib/db/client";
 import { requests, syncRuns, syncState } from "@/lib/db/schema";
 import { requestsFromSalesforce } from "@/lib/foi/from-salesforce";
@@ -147,14 +148,16 @@ async function syncObject(def: SyncObjectDef, mode: SyncMode, trigger: string): 
     }
 
     const [state] = await db.select().from(syncState).where(eq(syncState.object, def.name));
-    const versionKey = def.fieldsVersion ? `${def.name} (${def.fieldsVersion})` : null;
+    const selected = selectFields(describe, def);
+    // The field set's fingerprint lives in its own sync_state row: "Case (fields a1b2c3d4)".
+    const versionKey = def.reloadOnFieldChange ? `${def.name} (fields ${createHash("sha1").update([...selected].sort().join(",")).digest("hex").slice(0, 8)})` : null;
     const [version] = versionKey ? await db.select().from(syncState).where(eq(syncState.object, versionKey)) : [];
-    const reload = Boolean(versionKey && !version?.lastSuccessAt);
-    if (reload) console.log(`[sync] ${def.name}: selected fields changed (${def.fieldsVersion}); full reload`);
+    const reload = Boolean(versionKey && state?.cursor && !version?.lastSuccessAt);
+    if (reload) console.log(`[sync] ${def.name}: the visible fields changed (${selected.length} now); full reload`);
     const since = mode === "full" || reload || !state?.cursor ? null : new Date(state.cursor.getTime() - CURSOR_OVERLAP_MS);
     const conditions = [def.where, since ? `${def.cursorField} > ${soqlDateTime(since)}` : null].filter(Boolean);
     const soql =
-      `SELECT ${selectFields(describe, def).join(", ")} FROM ${def.name}` +
+      `SELECT ${selected.join(", ")} FROM ${def.name}` +
       (conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "") +
       ` ORDER BY ${def.cursorField} ASC`;
 
@@ -186,7 +189,10 @@ async function syncObject(def: SyncObjectDef, mode: SyncMode, trigger: string): 
 
     const [{ n }] = (await db.select({ n: sql<number>`count(*)::int` }).from(def.table)) as [{ n: number }];
     await saveState(def.name, { cursor, lastSuccessAt: new Date(), lastError: null, rowCount: n });
-    if (versionKey) await saveState(versionKey, { lastSuccessAt: new Date(), rowCount: n });
+    if (versionKey) {
+      await db.delete(syncState).where(and(like(syncState.object, `${def.name} (%`), ne(syncState.object, versionKey)));
+      await saveState(versionKey, { lastSuccessAt: new Date(), rowCount: n });
+    }
     return finish({ upserted, deleted });
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);

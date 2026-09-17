@@ -74,13 +74,13 @@ export default async function MediaReportPage({ searchParams }: { searchParams: 
 
       <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card title="פרסומים לאורך זמן · גוף תקשורת" level={2}>
-          <TimeColumns points={monthlyOutlet} caption="פרסומים לאורך זמן לפי גוף תקשורת" unit="פרסומים" />
+          <TimeColumns points={monthlyOutlet} caption="פרסומים לאורך זמן לפי גוף תקשורת" unit="פרסומים" defaultResolution="year" />
         </Card>
         <Card title="פרסומים לאורך זמן · קטגוריה">
-          <TimeColumns points={monthlyCategory} caption="פרסומים לאורך זמן לפי קטגוריה" unit="פרסומים" />
+          <TimeColumns points={monthlyCategory} caption="פרסומים לאורך זמן לפי קטגוריה" unit="פרסומים" defaultResolution="year" />
         </Card>
         <Card title="פרסומים לאורך זמן · רשות">
-          <TimeColumns points={monthlyOrg} caption="פרסומים לאורך זמן לפי רשות" unit="פרסומים" />
+          <TimeColumns points={monthlyOrg} caption="פרסומים לאורך זמן לפי רשות" unit="פרסומים" defaultResolution="year" />
         </Card>
       </div>
 

@@ -24,7 +24,9 @@ const MONTHS = ["ינו׳", "פבר׳", "מרץ", "אפר׳", "מאי", "יונ�
 
 const W = 760;
 const H = 220;
-const PAD = { top: 12, bottom: 28, start: 36, end: 8 };
+const PAD = { top: 22, bottom: 28, start: 36, end: 8 };
+/** Up to this many columns, every column's total is written above it. */
+const LABEL_TOTALS_UP_TO = 10;
 
 function niceMax(v: number): number {
   if (v <= 0) return 1;
@@ -82,8 +84,20 @@ function defaultResolution(first: string, last: string): Resolution {
  * Counts over time as stacked columns, one series per value (the largest few, the
  * rest as "אחר"), with a switch between weeks, months, quarters and years. Every
  * column names its period and each series on hover; the table holds every value.
+ * With ten columns or fewer, each column's total is also written above it.
  */
-export function TimeColumns({ points, caption, unit }: { points: TimePoint[]; caption: string; unit: string }) {
+export function TimeColumns({
+  points,
+  caption,
+  unit,
+  defaultResolution: initial,
+}: {
+  points: TimePoint[];
+  caption: string;
+  unit: string;
+  /** The first view; without it, chosen by the length of the span. */
+  defaultResolution?: Resolution;
+}) {
   const [first, last] = useMemo(() => {
     let a = points[0]?.day ?? "";
     let b = a;
@@ -93,7 +107,7 @@ export function TimeColumns({ points, caption, unit }: { points: TimePoint[]; ca
     }
     return [a, b];
   }, [points]);
-  const [resolution, setResolution] = useState<Resolution>(() => (points.length ? defaultResolution(first, last) : "month"));
+  const [resolution, setResolution] = useState<Resolution>(() => initial ?? (points.length ? defaultResolution(first, last) : "month"));
 
   const chart = useMemo(() => {
     if (!points.length) return null;
@@ -127,6 +141,7 @@ export function TimeColumns({ points, caption, unit }: { points: TimePoint[]; ca
   const step = plotW / periods.length;
   const barW = Math.max(1, step - Math.min(6, step * 0.3));
   const labelEvery = Math.ceil(periods.length / 10);
+  const showTotals = periods.length <= LABEL_TOTALS_UP_TO;
   const y = (v: number) => PAD.top + plotH - (v / max) * plotH;
 
   return (
@@ -198,6 +213,11 @@ export function TimeColumns({ points, caption, unit }: { points: TimePoint[]; ca
                   />
                 );
               })}
+              {showTotals && totals[pi] ? (
+                <text x={PAD.start + pi * step + step / 2} y={y(totals[pi]!) - 7} textAnchor="middle" className="fill-ink text-[18px] font-bold">
+                  {fmtNum(totals[pi]!)}
+                </text>
+              ) : null}
               {pi % labelEvery === 0 ? (
                 <text x={PAD.start + pi * step + step / 2} y={H - 8} textAnchor="middle" className="fill-muted text-[11px]">
                   {periodLabel(p, resolution)}
