@@ -1,6 +1,6 @@
 import { eq, getTableColumns, inArray, sql } from "drizzle-orm";
 import { getDb, getPool } from "@/lib/db/client";
-import { syncRuns, syncState } from "@/lib/db/schema";
+import { requests, syncRuns, syncState } from "@/lib/db/schema";
 import { requestsFromSalesforce } from "@/lib/foi/from-salesforce";
 import { sf, SalesforceError } from "./client";
 import { SYNC_OBJECTS, toDate, type SfRecord, type SyncObjectDef } from "./sync-objects";
@@ -210,6 +210,11 @@ export async function runSync(mode: SyncMode, trigger: string): Promise<SyncSumm
         try {
           const { upserted, removed } = await requestsFromSalesforce();
           console.log(`[sync] requests from Salesforce: ${upserted} rows, ${removed} removed in ${Date.now() - started}ms`);
+          // Real data replaces the static CSV snapshot the dashboard started with (SF_REPLACE_CSV=false keeps both).
+          if (upserted > 0 && process.env.SF_REPLACE_CSV !== "false") {
+            const dropped = await getDb().delete(requests).where(eq(requests.source, "csv")).returning({ c: requests.caseNumber });
+            if (dropped.length) console.log(`[sync] removed ${dropped.length} requests that came only from CSV uploads`);
+          }
         } catch (err) {
           console.error(`[sync] requests from Salesforce failed: ${(err as Error).message}`);
           results.push({ object: "requests", upserted: 0, deleted: 0, error: (err as Error).message, ms: Date.now() - started });

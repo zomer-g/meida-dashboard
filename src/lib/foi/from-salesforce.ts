@@ -58,6 +58,9 @@ export function mapCaseFields(describe: Pick<SfDescribe, "fields">): FieldMappin
 
 /** Captured on every Case sync, so the mapping follows label changes without a describe per render. */
 export async function saveCaseLabels(describe: SfDescribe): Promise<void> {
+  const mapping = mapCaseFields(describe);
+  const missing = mapping.filter((m) => !m.apiName).map((m) => m.key);
+  console.log(`[sync] Case field mapping: ${mapping.length - missing.length}/${mapping.length} dashboard fields found${missing.length ? `; not found: ${missing.join(", ")}` : ""}`);
   const db = getDb();
   await db.transaction(async (tx) => {
     await tx.delete(sfFieldLabels).where(eq(sfFieldLabels.sobject, "Case"));

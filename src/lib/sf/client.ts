@@ -33,7 +33,9 @@ export class SalesforceError extends Error {
 }
 
 function config() {
-  const loginUrl = process.env.SF_LOGIN_URL?.replace(/\/+$/, "");
+  // Forgiving: "meida.my.salesforce.com" typed without the scheme still works.
+  const raw = process.env.SF_LOGIN_URL?.trim().replace(/\/+$/, "");
+  const loginUrl = raw && !/^https?:\/\//i.test(raw) ? `https://${raw}` : raw;
   const clientId = process.env.SF_CLIENT_ID;
   const clientSecret = process.env.SF_CLIENT_SECRET;
   if (!loginUrl || !clientId || !clientSecret) {

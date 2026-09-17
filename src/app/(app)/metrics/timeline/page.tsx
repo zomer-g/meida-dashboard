@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { MonthlyColumns } from "@/components/charts/MonthlyColumns";
+import { TimeColumns } from "@/components/charts/TimeColumns";
 import { StackedBars } from "@/components/charts/StackedBars";
 import { BarList } from "@/components/dashboard/BarList";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
@@ -8,7 +8,7 @@ import { Card } from "@/components/ui";
 import { dashboardAuth } from "@/lib/auth/guard";
 import { EXPLAIN } from "@/lib/dashboard/explain";
 import { parseFilters, viewPath } from "@/lib/foi/filters";
-import { groupScores, monthlyRequests } from "@/lib/foi/metrics";
+import { groupScores, requestsOverTime } from "@/lib/foi/metrics";
 import { fmtInt } from "@/lib/format";
 
 export const metadata: Metadata = { title: "ציר זמן" };
@@ -18,7 +18,7 @@ export default async function TimelinePage({ searchParams }: { searchParams: Pro
   const auth = await dashboardAuth("timeline", viewPath("/metrics/timeline", f));
   if (!auth.ok) return auth.render;
 
-  const [years, byType, byTopic] = await Promise.all([groupScores(f, "year", 50), monthlyRequests(f, "authorityType", 6), monthlyRequests(f, "topic", 6)]);
+  const [years, byType, byTopic] = await Promise.all([groupScores(f, "year", 50), requestsOverTime(f, "authorityType", 6), requestsOverTime(f, "topic", 6)]);
   const ordered = [...years].sort((a, b) => a.label.localeCompare(b.label));
 
   return (
@@ -26,10 +26,10 @@ export default async function TimelinePage({ searchParams }: { searchParams: Pro
       <div className="flex flex-col gap-8">
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <Card title="בקשות שהוגשו לאורך זמן · לפי סוג רשות">
-            <MonthlyColumns points={byType} caption="בקשות לפי חודש וסוג רשות" unit="בקשות" />
+            <TimeColumns points={byType} caption="בקשות לאורך זמן לפי סוג רשות" unit="בקשות" />
           </Card>
           <Card title="בקשות שהוגשו לאורך זמן · לפי תחום">
-            <MonthlyColumns points={byTopic} caption="בקשות לפי חודש ותחום" unit="בקשות" />
+            <TimeColumns points={byTopic} caption="בקשות לאורך זמן לפי תחום" unit="בקשות" />
           </Card>
         </div>
 

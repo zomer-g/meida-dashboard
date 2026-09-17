@@ -84,7 +84,7 @@ curl -s -X POST "https://<my-domain>.my.salesforce.com/services/oauth2/token" -d
 
 | משתנה | ערך | Secret? |
 |---|---|---|
-| `SF_LOGIN_URL` | כתובת ה-My Domain, עם `https://` | לא |
+| `SF_LOGIN_URL` | כתובת ה-My Domain (עם או בלי `https://`) | לא |
 | `SF_CLIENT_ID` | Consumer Key | כן |
 | `SF_CLIENT_SECRET` | Consumer Secret | **כן** |
 
@@ -102,7 +102,8 @@ curl -s -X POST "https://<my-domain>.my.salesforce.com/services/oauth2/token" -d
 
 - כל 10 דקות: עדכונים אינקרמנטליים לפי `SystemModstamp` (כולל מחיקות מסל המחזור); פעם בלילה התאמה מלאה של מזהים. המידע נשמר במראה ב-Postgres, והדשבורד לא פונה ל-Salesforce בזמן טעינת עמוד.
 - אחרי כל סנכרון, הבקשות נבנות מחדש מהמראה לפי **תוויות השדות** — אותן כותרות כמו בדוחות ה-CSV — כך שכל המדדים ממשיכים לעבוד בלי שינוי.
-- בקשה שהועלתה קודם מ-CSV ונמצאת גם ב-Salesforce מתעדכנת לפי Salesforce (לפי מספר הבקשה).
+- בקשה שהועלתה קודם מ-CSV ונמצאת גם ב-Salesforce מתעדכנת לפי Salesforce (לפי מספר הבקשה). אחרי סנכרון מוצלח, בקשות שהגיעו **רק** מקובצי CSV נמחקות, כך שהדשבורד מציג את נתוני Salesforce בלבד (`SF_REPLACE_CSV=false` משאיר אותן).
+- בכל סנכרון נרשם בלוג כמה משדות הדשבורד נמצאו ב-Case ואילו לא (`[sync] Case field mapping`).
 
 ## תקלות נפוצות
 

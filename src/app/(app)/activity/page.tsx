@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Donut } from "@/components/charts/Donut";
-import { MonthlyColumns } from "@/components/charts/MonthlyColumns";
+import { TimeColumns } from "@/components/charts/TimeColumns";
 import { BarList } from "@/components/dashboard/BarList";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import { Card, StatCard, Table } from "@/components/ui";
 import { dashboardAuth } from "@/lib/auth/guard";
 import { EXPLAIN } from "@/lib/dashboard/explain";
 import { filtersQuery, parseFilters, viewPath } from "@/lib/foi/filters";
-import { monthlyRequests, petitions, projectSummary, requestCounts, requestKpis } from "@/lib/foi/metrics";
+import { requestsOverTime, petitions, projectSummary, requestCounts, requestKpis } from "@/lib/foi/metrics";
 import { fmtInt } from "@/lib/format";
 
 export const metadata: Metadata = { title: "פעילות התנועה" };
@@ -24,7 +24,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
     requestKpis(f),
     requestCounts(f, "status", 20),
     requestCounts(f, "organization", 15),
-    monthlyRequests(f, "authorityType", 6),
+    requestsOverTime(f, "authorityType", 6),
     petitions(f),
     projectSummary(f),
   ]);
@@ -47,7 +47,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <Card title="בקשות לפי סוג רשות · לאורך זמן" className="xl:col-span-2">
-            <MonthlyColumns points={monthlyType} caption="בקשות לפי חודש וסוג רשות" unit="בקשות" />
+            <TimeColumns points={monthlyType} caption="בקשות לאורך זמן לפי סוג רשות" unit="בקשות" />
           </Card>
           <Card title="סטטוס הבקשות">
             <Donut items={statuses.map((s) => ({ label: s.label, value: s.n }))} caption="בקשות לפי סטטוס" centerLabel="בקשות" top={6} />

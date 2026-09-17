@@ -27,7 +27,7 @@ export function webMetrics(f: Filters) {
       .groupBy(gaChannelDaily.channelGroup)
       .orderBy(desc(sql`2`));
     const monthly = await db
-      .select({ month: sql<string>`to_char(${gaChannelDaily.date}::date, 'YYYY-MM')`, label: gaChannelDaily.channelGroup, n: sql<number>`sum(${gaChannelDaily.sessions})::int` })
+      .select({ day: sql<string>`${gaChannelDaily.date}::text`, label: gaChannelDaily.channelGroup, n: sql<number>`sum(${gaChannelDaily.sessions})::int` })
       .from(gaChannelDaily)
       .where(inRange(gaChannelDaily.date))
       .groupBy(sql`1`, gaChannelDaily.channelGroup);
@@ -58,7 +58,7 @@ export function webMetrics(f: Filters) {
       engaged: totals?.engaged ?? 0,
       pageViews: pageViews?.n ?? 0,
       channels,
-      monthly: monthly.map((m) => ({ month: m.month, label: m.label, n: Number(m.n) })),
+      overTime: monthly.map((m) => ({ day: m.day, label: m.label, n: Number(m.n) })),
       pages,
       campaigns,
       lists: lists?.n ?? 0,

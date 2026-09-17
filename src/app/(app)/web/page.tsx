@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Donut } from "@/components/charts/Donut";
-import { MonthlyColumns } from "@/components/charts/MonthlyColumns";
+import { TimeColumns } from "@/components/charts/TimeColumns";
 import { BarList } from "@/components/dashboard/BarList";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import { Badge, Card, formatDateTime, StatCard, Table } from "@/components/ui";
@@ -58,8 +58,8 @@ export default async function WebPage({ searchParams }: { searchParams: Promise<
                 <StatCard label="מעורבות" value={fmtPercent(m.engaged, m.sessions)} info={EXPLAIN.engagement} />
               </div>
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                <Card title="כניסות לפי חודש וערוץ" className="xl:col-span-2">
-                  <MonthlyColumns points={m.monthly} caption="כניסות לפי חודש וערוץ" unit="כניסות" />
+                <Card title="כניסות לאורך זמן לפי ערוץ" className="xl:col-span-2">
+                  <TimeColumns points={m.overTime} caption="כניסות לאורך זמן לפי ערוץ" unit="כניסות" />
                 </Card>
                 <Card title="ערוצי הגעה">
                   <Donut items={m.channels.map((c) => ({ label: c.label, value: Number(c.n) }))} caption="כניסות לפי ערוץ" centerLabel="כניסות" top={6} />

@@ -112,23 +112,24 @@ export function refusalGrounds(f: Filters): Promise<{ total: number; grounds: Gr
   });
 }
 
-export interface MonthlyRow {
-  month: string;
+export interface TimeRow {
+  /** YYYY-MM-DD; the chart groups days into weeks, months, quarters or years. */
+  day: string;
   label: string;
   n: number;
 }
 
-/** Requests submitted per month, split by a dimension; everything beyond the top `top` values is "אחר". */
-export function monthlyRequests(f: Filters, dim: Dim, top = 5): Promise<MonthlyRow[]> {
-  return cached(key("monthlyRequests", f, dim, top), async () => {
-    const data = await rows<MonthlyRow>(sql`${REQUEST_VIEW}
+/** Requests submitted per day, split by a dimension; everything beyond the top `top` values is "אחר". */
+export function requestsOverTime(f: Filters, dim: Dim, top = 5): Promise<TimeRow[]> {
+  return cached(key("requestsOverTime", f, dim, top), async () => {
+    const data = await rows<TimeRow>(sql`${REQUEST_VIEW}
       , s as (select r.submitted_on, ${DIMS[dim]} as label from r ${whereClause(f, submitted, [sql`r.submitted_on is not null`, sql`r.timeliness <> 'טרם הוגשה'`])}),
       t as (select label from s group by 1 order by count(*) desc limit ${top})
-      select to_char(s.submitted_on, 'YYYY-MM') as month,
+      select to_char(s.submitted_on, 'YYYY-MM-DD') as day,
         case when s.label in (select label from t) then s.label else 'אחר' end as label,
         count(*)::int as n
       from s group by 1, 2 order by 1`);
-    return data.map((d) => ({ month: d.month, label: d.label, n: Number(d.n) }));
+    return data.map((d) => ({ day: d.day, label: d.label, n: Number(d.n) }));
   });
 }
 
@@ -336,16 +337,16 @@ export function mediaCounts(f: Filters, dim: MediaDim, limit = 50): Promise<Coun
   });
 }
 
-export function mediaMonthly(f: Filters, dim: MediaDim, top = 6): Promise<MonthlyRow[]> {
-  return cached(key("mediaMonthly", f, dim, top), async () => {
-    const data = await rows<MonthlyRow>(sql`${REQUEST_VIEW} ${MEDIA_VIEW}
+export function mediaOverTime(f: Filters, dim: MediaDim, top = 6): Promise<TimeRow[]> {
+  return cached(key("mediaOverTime", f, dim, top), async () => {
+    const data = await rows<TimeRow>(sql`${REQUEST_VIEW} ${MEDIA_VIEW}
       , s as (select p.published_on, ${MEDIA_DIMS[dim]} as label ${MEDIA_FROM} ${whereClause(f, published, [sql`p.published_on is not null`])}),
       t as (select label from s group by 1 order by count(*) desc limit ${top})
-      select to_char(published_on, 'YYYY-MM') as month,
+      select to_char(published_on, 'YYYY-MM-DD') as day,
         case when label in (select label from t) then label else 'אחר' end as label,
         count(*)::int as n
       from s group by 1, 2 order by 1`);
-    return data.map((d) => ({ month: d.month, label: d.label, n: Number(d.n) }));
+    return data.map((d) => ({ day: d.day, label: d.label, n: Number(d.n) }));
   });
 }
 

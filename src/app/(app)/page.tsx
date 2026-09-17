@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Donut } from "@/components/charts/Donut";
-import { MonthlyColumns } from "@/components/charts/MonthlyColumns";
+import { TimeColumns } from "@/components/charts/TimeColumns";
 import { DashboardFrame } from "@/components/dashboard/DashboardFrame";
 import { Pager } from "@/components/dashboard/Pager";
 import { Card, NewTabNote, StatCard, Table } from "@/components/ui";
@@ -8,7 +8,7 @@ import { dashboardAuth } from "@/lib/auth/guard";
 import { EXPLAIN } from "@/lib/dashboard/explain";
 import { formatDay } from "@/lib/dashboard/params";
 import { parseFilters, viewPath } from "@/lib/foi/filters";
-import { mediaCounts, mediaKpis, mediaMonthly, publicationList } from "@/lib/foi/metrics";
+import { mediaCounts, mediaKpis, mediaOverTime, publicationList } from "@/lib/foi/metrics";
 import { fmtInt } from "@/lib/format";
 
 export const metadata: Metadata = { title: "דוח תקשורת" };
@@ -28,9 +28,9 @@ export default async function MediaReportPage({ searchParams }: { searchParams: 
     mediaCounts(f, "outlet"),
     mediaCounts(f, "category"),
     mediaCounts(f, "organization"),
-    mediaMonthly(f, "outlet", 6),
-    mediaMonthly(f, "category", 6),
-    mediaMonthly(f, "organization", 6),
+    mediaOverTime(f, "outlet", 6),
+    mediaOverTime(f, "category", 6),
+    mediaOverTime(f, "organization", 6),
     publicationList(f, PAGE_SIZE, (page - 1) * PAGE_SIZE),
   ]);
   const slices = (rows: { label: string; n: number }[]) => rows.map((r) => ({ label: r.label, value: r.n }));
@@ -74,13 +74,13 @@ export default async function MediaReportPage({ searchParams }: { searchParams: 
 
       <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card title="פרסומים לאורך זמן · גוף תקשורת" level={2}>
-          <MonthlyColumns points={monthlyOutlet} caption="פרסומים לפי חודש וגוף תקשורת" unit="פרסומים" />
+          <TimeColumns points={monthlyOutlet} caption="פרסומים לאורך זמן לפי גוף תקשורת" unit="פרסומים" />
         </Card>
         <Card title="פרסומים לאורך זמן · קטגוריה">
-          <MonthlyColumns points={monthlyCategory} caption="פרסומים לפי חודש וקטגוריה" unit="פרסומים" />
+          <TimeColumns points={monthlyCategory} caption="פרסומים לאורך זמן לפי קטגוריה" unit="פרסומים" />
         </Card>
         <Card title="פרסומים לאורך זמן · רשות">
-          <MonthlyColumns points={monthlyOrg} caption="פרסומים לפי חודש ורשות" unit="פרסומים" />
+          <TimeColumns points={monthlyOrg} caption="פרסומים לאורך זמן לפי רשות" unit="פרסומים" />
         </Card>
       </div>
 
