@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { loginUrl } from "@/lib/auth/urls";
 import { getDb } from "@/lib/db/client";
 import { mcpClients } from "@/lib/db/schema";
-import { mcpEnabled, SCOPE } from "@/lib/mcp/config";
+import { baseUrl, mcpEnabled, SCOPE } from "@/lib/mcp/config";
 import { clientIp, OAUTH_LIMIT, rateLimit } from "@/lib/mcp/rate-limit";
 import { signState } from "@/lib/mcp/tokens";
 
@@ -61,13 +61,14 @@ export async function GET(req: Request) {
   const session = await getSession();
   if (session.status === "anonymous") {
     // Through the dashboard's own sign-in, then straight back here with the same query.
+    // Built from the proxy's headers, never from req.url: inside the container that is 0.0.0.0:3000.
     const back = `/mcp/oauth/authorize?${q.toString()}`;
-    return Response.redirect(new URL(loginUrl(back), req.url).toString(), 303);
+    return Response.redirect(`${baseUrl(req)}${loginUrl(back)}`, 303);
   }
   if (session.status === "refused") {
     return page(403, "אין לך גישה לדשבורד", `החשבון ${session.identity.email} אינו מורשה. אפשר לבקש גישה ממנהלי המערכת, ואז לנסות שוב.`);
   }
 
   const approval = await signState({ clientId, redirectUri, codeChallenge, clientState: state ?? undefined });
-  return Response.redirect(new URL(`/mcp/consent?state=${encodeURIComponent(approval)}`, req.url).toString(), 303);
+  return Response.redirect(`${baseUrl(req)}/mcp/consent?state=${encodeURIComponent(approval)}`, 303);
 }
