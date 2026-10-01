@@ -12,6 +12,7 @@ const TABS = [
   { href: "/admin/integrations", label: "חיבורים" },
   { href: "/admin/salesforce", label: "Salesforce" },
   { href: "/admin/sync", label: "סנכרון" },
+  { href: "/admin/mcp", label: "MCP" },
   { href: "/admin/texts", label: "טקסטים" },
   { href: "/admin/audit", label: "יומן פעילות" },
 ];

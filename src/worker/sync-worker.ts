@@ -15,6 +15,7 @@ import { syncRequests, syncRuns, syncState } from "@/lib/db/schema";
 import { ga4Configured } from "@/lib/google/ga4";
 import { marketingConfigured, runMarketingSync } from "@/lib/integrations/marketing-sync";
 import { salesforceConfigured } from "@/lib/sf/client";
+import { pruneUsage } from "@/lib/mcp/usage";
 import { runSync, type SyncMode } from "@/lib/sf/sync";
 
 type JobMode = SyncMode | "marketing";
@@ -82,7 +83,16 @@ async function run(mode: JobMode, trigger: string): Promise<void> {
     log(`${mode} skipped: Salesforce is not configured`);
     return;
   }
-  if (mode !== "reconcile") lastIncrementalAt = Date.now();
+  if (mode === "reconcile") {
+    // Housekeeping rides along with the nightly job.
+    const pruned = await pruneUsage().catch((err: unknown) => {
+      log(`mcp usage prune failed: ${(err as Error).message}`);
+      return 0;
+    });
+    if (pruned) log(`pruned ${pruned} MCP usage rows older than 90 days`);
+  } else {
+    lastIncrementalAt = Date.now();
+  }
   const summary = await runSync(mode, trigger);
   if (summary.locked) {
     log(`${mode} skipped: another sync holds the lock`);

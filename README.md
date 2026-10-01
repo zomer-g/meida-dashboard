@@ -11,6 +11,7 @@
 | חיבור Google Analytics 4 | [docs/setup-google-analytics.md](docs/setup-google-analytics.md) |
 | חיבור SMOOV | [docs/setup-smoov.md](docs/setup-smoov.md) |
 | הגדרות המדדים ומיפוי מ-Looker | [docs/metrics.md](docs/metrics.md) |
+| חיבור כלי AI (MCP) לדשבורד | [docs/setup-mcp.md](docs/setup-mcp.md) |
 
 ## משתני סביבה ב-xhostd
 
@@ -22,6 +23,7 @@
 | `SF_LOGIN_URL`, `SF_CLIENT_ID`, `SF_CLIENT_SECRET` | לחיבור Salesforce | ראו המדריך |
 | `GA4_PROPERTY_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON` | לחיבור GA4 | ראו המדריך |
 | `SMOOV_API_KEY` | לחיבור SMOOV | ראו המדריך |
+| `MCP_JWT_SECRET` | לשרת ה-MCP | מפתח לחתימת אסימוני MCP (32 תווים ומעלה). בלעדיו המסלולים של MCP מחזירים 503 |
 | `CONTACT_EMAIL` | לא | כתובת לפניות בהצהרת הנגישות ובמדיניות הפרטיות (בלעדיה יוצג "מנהלי המערכת") |
 | `SEED_ON_EMPTY` | לא | `true` (ברירת מחדל): טעינת קובצי CSV מתיקיית `seed/` לבסיס נתונים ריק (התיקייה אינה בריפו) |
 

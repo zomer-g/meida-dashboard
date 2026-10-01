@@ -56,6 +56,19 @@ Lookups not in Salesforce, editable at `/admin/lookups` (editor+): `organization
   reconcile, GA/SMOOV every 6 h, failed sources retried after 30 min, manual requests from `/admin/sync`.
 - Secrets only as xhostd env secrets; never log them or send them to the client.
 
+## MCP server (read-only, `src/lib/mcp/` + `src/app/mcp/`)
+A remote MCP server over the same data, switched on by `MCP_JWT_SECRET` (503 without it). Identity is the dashboard's
+own xhostd SSO — no second IdP: `/mcp/oauth/authorize` sends the person through `loginUrl()`, `/mcp/consent` shows what
+the client would get, and only `/mcp/oauth/approve` (signed state + origin check) mints a code. Tokens are HS256 JWTs
+(access 1h, refresh 30d) carrying `sub`, `cid` and `tv`; `authenticate()` re-reads the user on every call, so a
+deactivated user, a changed user type or a bumped `users.mcp_token_version` cuts access off at once.
+**Permissions are the UI's:** `toolsFor(user)` filters the tool list by `user.pages`, and `tools/call` refuses anything
+outside it (`src/lib/mcp/tools.ts`, each tool declares its `page`). Every tool calls the existing metric queries — never
+write anything here. Metadata lives at the ROOT paths `/.well-known/oauth-{protected-resource,authorization-server}/mcp`
+(RFC 8414/9728) with `issuer` equal to `<origin>/mcp`, mirrored under `/mcp/.well-known/*`; the token endpoint must keep
+accepting `application/x-www-form-urlencoded`. Usage goes to `mcp_usage` (admin screen `/admin/mcp`, pruned nightly).
+Guide: `docs/setup-mcp.md`.
+
 ## Design (meida.org.il)
 Tokens in `src/app/globals.css`: navy `#0b2149` (brand-dark: header strip, headings, footer, active pills), blue
 `#2274da` (brand: CTAs), sky `#c6e3f4` (accent-light panels), `#144683` (accent: card bands), Assistant font, logos in

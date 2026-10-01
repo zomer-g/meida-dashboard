@@ -49,6 +49,8 @@ export const users = pgTable(
     name: text("name"),
     picture: text("picture"),
     role: text("role").$type<Role>().notNull().default("viewer"),
+    /** Bumped to revoke this user's MCP tokens (an issued token carries the version it was signed with). */
+    mcpTokenVersion: integer("mcp_token_version").notNull().default(0),
     userType: text("user_type").references(() => userTypes.key, { onUpdate: "cascade", onDelete: "set null" }),
     active: boolean("active").notNull().default(true),
     createdAt: ts("created_at").notNull().defaultNow(),
@@ -109,6 +111,62 @@ export const auditLog = pgTable(
     details: jsonb("details"),
   },
   (t) => [index("audit_log_at_idx").on(t.at), index("audit_log_actor_at_idx").on(t.actor, t.at)],
+);
+
+/* -------------------------------------------------------------------- mcp */
+
+/*
+ * The read-only MCP server (src/lib/mcp/): an MCP client signs in with the same
+ * xhostd SSO as the dashboard, and every tool answers with exactly what that user
+ * may see in the UI. These tables hold only the OAuth plumbing and a usage log.
+ */
+
+/** MCP clients that registered themselves (RFC 7591 Dynamic Client Registration). */
+export const mcpClients = pgTable("mcp_clients", {
+  clientId: uuid("client_id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  redirectUris: text("redirect_uris").array().notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  lastUsedAt: ts("last_used_at"),
+});
+
+/** Single-use authorization codes (PKCE), ten minutes each. */
+export const mcpCodes = pgTable(
+  "mcp_codes",
+  {
+    code: text("code").primaryKey(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => mcpClients.clientId, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    redirectUri: text("redirect_uri").notNull(),
+    codeChallenge: text("code_challenge").notNull(),
+    expiresAt: ts("expires_at").notNull(),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("mcp_codes_expires_idx").on(t.expiresAt)],
+);
+
+/** One row per tool call: who, which tool, how much came back, how long it took. */
+export const mcpUsage = pgTable(
+  "mcp_usage",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    at: ts("at").notNull().defaultNow(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    userEmail: text("user_email").notNull(),
+    clientId: uuid("client_id"),
+    tool: text("tool").notNull(),
+    args: jsonb("args"),
+    resultRows: integer("result_rows"),
+    resultBytes: integer("result_bytes"),
+    latencyMs: integer("latency_ms"),
+    status: text("status").notNull(),
+    error: text("error"),
+  },
+  (t) => [index("mcp_usage_at_idx").on(t.at), index("mcp_usage_user_idx").on(t.userId, t.at)],
 );
 
 /* --------------------------------------------------------- foi requests */
