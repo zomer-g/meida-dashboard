@@ -12,10 +12,28 @@ import { newAuthorizationCode, verifyState } from "@/lib/mcp/tokens";
  */
 export const dynamic = "force-dynamic";
 
+const escapeHtml = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/**
+ * Hands the browser back to the MCP client.
+ *
+ * Not a redirect: the app's CSP says `form-action 'self'`, and browsers apply that
+ * to the whole redirect chain of a form submission — a 303 to claude.ai from this
+ * POST is blocked, and the button looks dead. A page that navigates itself is a
+ * plain navigation, which CSP does not restrict, and it needs no JavaScript.
+ */
 function back(redirectUri: string, params: Record<string, string | undefined>): Response {
   const url = new URL(redirectUri);
   for (const [k, v] of Object.entries(params)) if (v) url.searchParams.set(k, v);
-  return Response.redirect(url.toString(), 303);
+  const target = escapeHtml(url.toString());
+  return new Response(
+    `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="0;url=${target}"><title>מתחבר…</title>
+<style>body{font-family:system-ui,Segoe UI,Arial,sans-serif;background:#f5f8fb;color:#0b2149;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;padding:24px;text-align:center}
+a{color:#2274da}</style></head>
+<body><div><p>מחזירים אותך לכלי…</p><p><a href="${target}">להמשך, אם הדף לא מתקדם מעצמו</a></p></div></body></html>`,
+    { status: 200, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(req: Request) {
